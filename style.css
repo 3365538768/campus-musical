@@ -208,3 +208,4 @@ footer a { color:var(--pink); }
 .wbtn.on { background:var(--pink); border-color:var(--pink); color:#fff; }
 .wbtn b { margin-left:2px; }
 .sug .wbtn { flex:0 0 auto; }
+.stile.none { background:transparent; border:1px dashed #ffffff55; color:var(--mute); }

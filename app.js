@@ -5,6 +5,7 @@ const CAT = {upcoming:'预告', show:'演出', review:'回顾', other:'动态'};
 const SRC = {wx:'公众号', xhs:'小红书', bili:'B站'};
 const D = {posts:[], clubs:[], videos:[], meta:{}};
 const FILTERS = ['province', 'city', 'level', 'school', 'show'];
+const NONE = '__none__';  // 「未识别剧目」
 const DUR = ['5分钟内', '5–30分钟', '30–75分钟', '75分钟以上'];
 const TABS = ['videos', 'big', 'clubs', 'wish', 'submit', 'posts'];
 const Q = {vkind: '', vdur: '', vsort: 'hot', pcat: '', psrc: '', group: false};  // 快捷方块的状态
@@ -105,7 +106,7 @@ function match(x, f, fields) {
   if (f.city && x.city !== f.city) return false;
   if (f.level && x.level !== f.level) return false;
   if (f.school && x.school !== f.school) return false;
-  if (f.show && !(x.shows || []).includes(f.show)) return false;
+  if (f.show && (f.show === NONE ? (x.shows || []).length : !(x.shows || []).includes(f.show))) return false;
   return !f.kw || fields.some(k => String(Array.isArray(x[k]) ? x[k].join(' ') : x[k] || '').toLowerCase().includes(f.kw));
 }
 const PF = ['title', 'club', 'school', 'city', 'digest', 'venue', 'shows', 'author'];
@@ -153,8 +154,10 @@ function showTiles(items, f, limit, unit) {
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, limit);
   const max = top.length ? top[0][1] : 1;
   const size = n => n / max >= 0.5 && n >= 3 ? 3 : n / max >= 0.25 && n >= 2 ? 2 : n / max >= 0.1 && n >= 2 ? 1 : 0;  // 按相对多少分档
+  const none = items.filter(v => !(v.shows || []).length).length;
   return '<div class="showtiles">' + top.map(([s, n]) =>
-    `<button class="stile s${size(n)}${f.show === s ? ' on' : ''}" data-show="${esc(s)}">${esc(s)}<span>${n} ${unit}</span></button>`).join('') + '</div>';
+    `<button class="stile s${size(n)}${f.show === s ? ' on' : ''}" data-show="${esc(s)}">${esc(s)}<span>${n} ${unit}</span></button>`).join('')
+    + (none ? `<button class="stile none${f.show === NONE ? ' on' : ''}" data-show="${NONE}">❓ 未识别剧目<span>${none} ${unit}</span></button>` : '') + '</div>';
 }
 
 function viewVideos(f) {
@@ -337,7 +340,10 @@ function refreshOptions() {
     : tab === 'posts' ? D.posts.filter(p => (!Q.pcat || (Q.pcat === 'Repo' ? p.repo : Q.pcat === '演出相关' ? p.cat !== 'other' && !p.repo : CAT[p.cat] === Q.pcat && !p.repo))
                                    && (!Q.psrc || (Q.psrc === '非官方' ? p.unofficial : SRC[p.src] === Q.psrc && !p.unofficial)))
     : [...D.posts, ...D.videos];
-  fillSelect('show', counts(src.filter(x => match(x, {...f, show: ''}, tab === 'posts' ? PF : VF)), 'shows').slice(0, 200), '全部剧目');
+  const pool = src.filter(x => match(x, {...f, show: ''}, tab === 'posts' ? PF : VF));
+  fillSelect('show', counts(pool, 'shows').slice(0, 200), '全部剧目');
+  const nn = pool.filter(x => !(x.shows || []).length).length;
+  if (nn) { const o = document.createElement('option'); o.value = NONE; o.textContent = `❓ 未识别剧目 (${nn})`; $('show').appendChild(o); if (f.show === NONE) $('show').value = NONE; }
 }
 
 // 筛选条件写进网址：复制链接分享给朋友，打开就是同样的页面
