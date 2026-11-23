@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>不务正剧 · NOT JUST A MUSICAL</title>
+<meta name="description" content="学可以不上，剧不能不看。全国高校与中学音乐剧社的演出视频、年度大戏、演出预告与剧社动态，一站看全。">
+<meta property="og:title" content="不务正剧 · NOT JUST A MUSICAL">
+<meta property="og:description" content="学可以不上，剧不能不看。全国校园音乐剧社的大戏全剧、演出视频与演出预告。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#140f22">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="spot s1"></div><div class="spot s2"></div>
+  <div id="danmaku" aria-hidden="true"></div>
+  <div class="wrap hero-in">
+    <div>
+      <div class="brand"><span class="logo">🎭</span><h1>不务正剧</h1></div>
+      <div class="en">NOT JUST A MUSICAL</div>
+      <p class="slogan">学可以不上，剧不能不看。</p>
+      <p class="sub" id="updated">加载中…</p>
+    </div>
+    <button class="share" id="shareBtn">📣 分享本页</button>
+  </div>
+</header>
+<div class="wrap"><a class="adslot" href="https://github.com/3365538768/campus-musical/issues" target="_blank" rel="noopener">
+  <span class="adbig">📢 广告位招租 😊嘿嘿</span><span class="adsub">剧社招新 · 演出宣传 · 票务 · 品牌合作 —— 留言板或 GitHub Issues 联系我们</span></a></div>
+<nav class="tabs wrap">
+  <button data-tab="videos">🎬 演出视频</button>
+  <button data-tab="big">🏆 大戏</button>
+  <button data-tab="clubs">🎪 剧社名录</button>
+  <button data-tab="wish">💡 想排/想看</button>
+  <button data-tab="posts">📰 剧社动态</button>
+  <span class="tabs-sp"></span>
+  <button data-tab="submit">📮 申请收录</button>
+</nav>
+<div class="filters wrap">
+  <div class="frow">
+    <select id="province"><option value="">全部地区</option></select>
+    <select id="city"><option value="">全部城市</option></select>
+    <select id="level"><option value="">全部学段</option><option>大学</option><option>高中</option><option>初中</option></select>
+    <select id="school"><option value="">全部学校</option></select>
+    <select id="show"><option value="">全部剧目</option></select>
+    <input id="kw" type="search" placeholder="🔍 搜剧目、剧社、学校…">
+    <button id="reset" class="link">清空</button>
+    <span id="count" class="mute"></span>
+  </div>
+  <div class="frow" id="hotSearch" hidden></div>
+  <div id="quick"></div>
+</div>
+<div class="wrap layout">
+  <main id="view"></main>
+  <aside id="side"></aside>
+</div>
+<footer class="wrap">
+  <b>不务正剧</b> · NOT JUST A MUSICAL —— 信息由程序从公开渠道自动整理，日期与剧目为自动识别，「大戏」指 45 分钟以上的演出视频，请以剧社原文为准。
+  🔥 为站内点击与 B站播放综合最热的前 20。剧社希望收录、更正或移除，请在 <a href="https://github.com/3365538768/campus-musical/issues">GitHub Issues</a> 留言。
+</footer>
+<div id="toast" hidden></div>
+<button id="gbBtn">📝 留言板</button>
+<div id="gb" hidden>
+  <div class="gbhead"><b>📝 留言板</b><span class="mute">留言会变成弹幕飘过头图</span>
+    <label class="mute"><input type="checkbox" id="dmOn" checked> 弹幕</label><button class="gbclose" id="gbClose">×</button></div>
+  <div class="cform"><input id="gbName" placeholder="昵称（可不填，默认“匿名剧友”）" maxlength="20">
+    <textarea id="gbBody" placeholder="说点什么吧：安利一部校园大戏、约个剧友、给剧社打 call…（最多 100 字）" maxlength="100"></textarea>
+    <button class="btn" id="gbSend">发射弹幕 🚀</button></div>
+  <div id="gbList" class="mute">加载中…</div>
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
