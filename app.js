@@ -25,7 +25,7 @@ const itemId = url => { let h = 5381; for (const c of url.split('?')[0]) h = ((h
 // ---------- 站内统计与评论（Supabase，可选） ----------
 const CFG = window.CM_CFG || {};
 const SB = CFG.supabaseUrl && CFG.anonKey;
-const CLICKS = {}, CCOUNT = {};
+const CLICKS = {}, CCOUNT = {}, CHOT = {};  // CHOT：整点快照的评论数（用于排序）
 async function sb(path, opts = {}) {
   // 新版 publishable key（sb_publishable_…）只放 apikey 头；旧版 anon key（JWT）同时放 Authorization
   const auth = CFG.anonKey.startsWith('sb_') ? {} : {Authorization: 'Bearer ' + CFG.anonKey};
@@ -43,6 +43,7 @@ async function loadStats() {
     try { cc = await sb('click_counts_hourly?select=item,c'); } catch (e) { cc = await sb('click_counts?select=item,c'); }
     cc.forEach(r => CLICKS[r.item] = r.c);
     try { (await sb('comment_counts?select=item,c')).forEach(r => CCOUNT[r.item] = r.c); } catch (e) {}
+    try { (await sb('comment_counts_hourly?select=item,c')).forEach(r => CHOT[r.item] = r.c); } catch (e) { Object.assign(CHOT, CCOUNT); }
     const hot = await sb('search_counts?select=q,c&order=c.desc&limit=12');
     if (hot.length) {
       $('hotSearch').hidden = false;
@@ -52,7 +53,8 @@ async function loadStats() {
   render(true);
 }
 const clicks = x => CLICKS[itemId(x.url)] || 0;
-const hotScore = x => (x.pin ? 1e12 : 0) + clicks(x) * 2000 + (+x.play || 0);  // 站内点击权重高于 B站播放
+// 热度（每小时更新）：置顶 + 站内观看×2000 + 评论×5000 + B站播放
+const hotScore = x => (x.pin ? 1e12 : 0) + clicks(x) * 2000 + (CHOT[itemId(x.url)] || 0) * 5000 + (+x.play || 0);
 
 // ---------- 数据 ----------
 function unpackVideo(v) {
@@ -507,6 +509,13 @@ $('gbSend').onclick = async () => {
 };
 if (!SB) $('gbBtn').hidden = true;
 
+// 访问统计：浏览器里随机生成的匿名 ID，不含任何个人信息
+if (SB) {
+  let vid = localStorage.getItem('vid');
+  if (!vid) { vid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('vid', vid); }
+  track('visits', {vid});
+}
+
 restoreUrl();
 fetch(`data/meta.json?t=${Date.now()}`).then(r => r.json()).catch(() => ({})).then(async meta => {
   VER = meta.ver || '';
@@ -514,7 +523,7 @@ fetch(`data/meta.json?t=${Date.now()}`).then(r => r.json()).catch(() => ({})).th
   Object.assign(D, {posts: posts || [], clubs: clubs || [], meta: meta || {}});
   $('updated').textContent = D.meta.updated
     ? `${D.meta.n_clubs} 个剧社 · ${D.meta.n_big || 0} 部大戏 · ${D.meta.n_videos || 0} 个演出视频 · 内容更新于 ${new Date(D.meta.updated * 1000).toLocaleString('zh-CN', {hour12: false})}`
-      + ` · 🔥 热度排名每小时更新一次（下次 ${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00）`
+      + ` · 🔥 热度（观看+评论）每小时更新一次（下次 ${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00）`
     : '暂无数据';
   fillSelect('province', counts(D.clubs, 'province'), '全部地区');
   render();
