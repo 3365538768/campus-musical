@@ -25,7 +25,7 @@ const itemId = url => { let h = 5381; for (const c of url.split('?')[0]) h = ((h
 // ---------- 站内统计与评论（Supabase，可选） ----------
 const CFG = window.CM_CFG || {};
 const SB = CFG.supabaseUrl && CFG.anonKey;
-const CLICKS = {}, CCOUNT = {}, CHOT = {};  // CHOT：整点快照的评论数（用于排序）
+const CLICKS = {}, CLIVE = {}, CCOUNT = {}, CHOT = {};  // CLICKS/CHOT：整点快照（排序用）；CLIVE/CCOUNT：实时（显示用）  // CHOT：整点快照的评论数（用于排序）
 async function sb(path, opts = {}) {
   // 新版 publishable key（sb_publishable_…）只放 apikey 头；旧版 anon key（JWT）同时放 Authorization
   const auth = CFG.anonKey.startsWith('sb_') ? {} : {Authorization: 'Bearer ' + CFG.anonKey};
@@ -42,6 +42,7 @@ async function loadStats() {
     let cc;
     try { cc = await sb('click_counts_hourly?select=item,c'); } catch (e) { cc = await sb('click_counts?select=item,c'); }
     cc.forEach(r => CLICKS[r.item] = r.c);
+    try { (await sb('click_counts?select=item,c')).forEach(r => CLIVE[r.item] = r.c); } catch (e) { Object.assign(CLIVE, CLICKS); }
     try { (await sb('comment_counts?select=item,c')).forEach(r => CCOUNT[r.item] = r.c); } catch (e) {}
     try { (await sb('comment_counts_hourly?select=item,c')).forEach(r => CHOT[r.item] = r.c); } catch (e) { Object.assign(CHOT, CCOUNT); }
     const hot = await sb('search_counts?select=q,c&order=c.desc&limit=12');
@@ -115,7 +116,8 @@ const showChips = x => (x.shows || []).map(s => `<a class="chip show" data-show=
 const levelChip = x => x.level && x.level !== '大学' ? `<span class="chip lv">${esc(x.level)}</span>` : '';
 const clubMeta = p => `<b>${esc(p.club)}</b>${p.school && p.school !== p.club ? ' · ' + esc(p.school) : ''}${p.city ? ' · ' + esc(p.city) : ''}`;
 const unoff = x => x.unofficial ? `<span class="chip ghost">非官方 · ${esc(x.author)}</span> ` : '';
-const tools = x => SB ? `<div class="cbar">${clicks(x) ? `<span class="mute">👀 ${clicks(x)}</span>` : ''}<button class="cbtn" data-comment="${esc(x.url)}">💬 评论${CCOUNT[itemId(x.url)] ? ' ' + CCOUNT[itemId(x.url)] : ''}</button></div><div class="cbox" hidden></div>` : '';
+const live = x => CLIVE[itemId(x.url)] || 0;
+const tools = x => SB ? `<div class="cbar"><span class="mute views" data-views="${itemId(x.url)}"${live(x) ? '' : ' hidden'}>👀 ${live(x)}</span><button class="cbtn" data-comment="${esc(x.url)}">💬 评论${CCOUNT[itemId(x.url)] ? ' ' + CCOUNT[itemId(x.url)] : ''}</button></div><div class="cbox" hidden></div>` : '';
 const link = (x, cls, text) => `<a class="${cls}" href="${esc(x.url)}" target="_blank" rel="noopener" data-track="${esc(x.url)}">${text}</a>`;
 
 function postCard(p) {
@@ -422,7 +424,12 @@ $('kw').addEventListener('input', () => {
 $('reset').onclick = () => { [...FILTERS, 'kw'].forEach(id => $(id).value = ''); Object.assign(Q, {vkind: '', vdur: '', pcat: '', psrc: ''}); render(); };
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-track]');
-  if (t) track('clicks', {item: itemId(t.dataset.track), url: t.dataset.track.split('?')[0]});
+  if (t) {
+    const id = itemId(t.dataset.track);
+    track('clicks', {item: id, url: t.dataset.track.split('?')[0]});
+    CLIVE[id] = (CLIVE[id] || 0) + 1;  // 观看数当场 +1（排序仍按整点快照）
+    document.querySelectorAll(`[data-views="${id}"]`).forEach(el => { el.hidden = false; el.textContent = '👀 ' + CLIVE[id]; });
+  }
   const pe = e.target.closest('[data-wper]');
   if (pe) { WPER = pe.dataset.wper; render(true); return; }
   const w = e.target.closest('[data-wish]');
